@@ -2,7 +2,7 @@ from django.urls import path
 from .views import list_ingredients
 
 
-app_name = "ingredient_managment"
+app_name = "recipe_management"
 
 
 urlpatterns = [

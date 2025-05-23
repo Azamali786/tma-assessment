@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     "rest_framework",
     
     # custom apps
-    "recipe management",
+    "recipe_management",
 ]
 
 MIDDLEWARE = [

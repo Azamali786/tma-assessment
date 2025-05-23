@@ -22,5 +22,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     
     # ingredient related endpoints
-    path("api/", include("ingredient_management.urls", namespace="ingredient_managment"))
+    path("api/", include("recipe_management.urls", namespace="recipe_management"))
 ]
