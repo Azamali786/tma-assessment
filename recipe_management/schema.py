@@ -132,15 +132,38 @@ class CreateRecipe(graphene.Mutation):
     recipe = graphene.Field(RecipeType)
 
     def mutate(self, info, title, ingredient_ids=[]):
-        data = {
-            'title': title,
-            'ingredient_ids': ingredient_ids
+        number_tracker = {
+            1: "First",
+            2: "Second",
+            3: "Third",
+            4: "Fourth",
+            5: "Fifth",
+            6: "Sixth"
         }
-        breakpoint()
-        serializer = RecipeSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        recipe = serializer.save()
-        return CreateRecipe(recipe=recipe)
+        try:
+            internal_ids = []
+            id_number = 1
+            if not ingredient_ids:
+                raise GraphQLError("Atleat one ingredient is necessary to create recipe.")
+            for gid in ingredient_ids:
+                _type, internal_id = from_global_id(gid)
+                if not internal_id:
+                    raise GraphQLError(F"{number_tracker[id_number]} ID is Invalid.")
+                internal_ids.append(int(internal_id))
+                id_number += 1
+
+            data = {
+                'title': title,
+                'ingredients': internal_ids
+            }
+            serializer = RecipeSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            recipe = serializer.save()
+            return CreateRecipe(recipe=recipe)
+
+        except Exception as e:
+            raise GraphQLError(str(e))
+        
 
 class AddIngredientsToRecipe(graphene.Mutation):
     class Arguments:

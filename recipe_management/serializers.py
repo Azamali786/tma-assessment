@@ -55,11 +55,10 @@ class RecipeSerializer(serializers.ModelSerializer):
     """
     
     title = serializers.CharField(validators=[validate_string_field])
-    ingredient_ids = serializers.PrimaryKeyRelatedField(
+    ingredients = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
         many=True,
         write_only=True,
-        source='ingredients'
     )
     
     class Meta:
