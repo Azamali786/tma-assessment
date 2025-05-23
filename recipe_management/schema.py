@@ -58,7 +58,19 @@ class Query(graphene.ObjectType):
         return Recipe.objects.all()
 
     def resolve_recipe(self, info, id):
-        return Recipe.objects.get(pk=id)
+        try:
+            _type, internal_id = from_global_id(id)
+            if not internal_id:
+                raise GraphQLError("Invalid ID.")
+            if _type != "RecipeType":
+                raise GraphQLError("Invalid node type for Recipe.")
+            recipe = Recipe.objects.filter(pk=internal_id).first()
+            if not recipe:
+                raise GraphQLError("Recipe not found.")
+            return recipe
+
+        except Exception as e:
+            raise GraphQLError(str(e))
     
 
 # Mutations
@@ -99,7 +111,7 @@ class DeleteIngredient(graphene.Mutation):
         try:
             _type, internal_id = from_global_id(id)
             if not internal_id:
-                raise GraphQLError("Invalid ID")
+                raise GraphQLError("Invalid ID.")
             if _type != "IngredientType":
                 raise GraphQLError("Invalid node type for Ingredient.")
             ingredient = Ingredient.objects.filter(pk=internal_id).first()
@@ -124,6 +136,7 @@ class CreateRecipe(graphene.Mutation):
             'title': title,
             'ingredient_ids': ingredient_ids
         }
+        breakpoint()
         serializer = RecipeSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         recipe = serializer.save()
