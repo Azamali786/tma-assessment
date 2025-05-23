@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     # third party apps
     "rest_framework",
     'rest_framework.authtoken',
+    'graphene_django',
+    # 'graphql_auth',
     
     # custom apps
     "recipe_management",
@@ -80,10 +82,11 @@ WSGI_APPLICATION = "tmaconfig.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -147,3 +150,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
+# graphQL settings
+GRAPHENE = {
+    'SCHEMA': 'tmaconfig.schema.schema'
+}
