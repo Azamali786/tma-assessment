@@ -1,10 +1,10 @@
 from django.urls import path
-from .views import list_ingredients
+from .views import CustomAuthToken
 
 
 app_name = "recipe_management"
 
 
 urlpatterns = [
-    path("ingredients/", list_ingredients, name="list_ingredients")
+    path('token-auth/', CustomAuthToken.as_view(), name="auth_token"),
 ]
