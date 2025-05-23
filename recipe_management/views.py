@@ -19,6 +19,8 @@ from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.settings import api_settings
 from rest_framework.exceptions import AuthenticationFailed
 from django.http import JsonResponse
+import json
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class DRFAuthenticatedGraphQLView(GraphQLView):
@@ -26,12 +28,24 @@ class DRFAuthenticatedGraphQLView(GraphQLView):
     permission_classes = [IsAuthenticated]
 
     def dispatch(self, request, *args, **kwargs):
-        auth_header = request.headers.get("Authorization")
+        # ✅ Allow HTML request for GraphiQL
+        if request.method == "GET" and "text/html" in request.META.get("HTTP_ACCEPT", ""):
+            return super().dispatch(request, *args, **kwargs)
 
+        # ✅ Allow introspection query unauthenticated
+        if request.method == "POST":
+            try:
+                body = json.loads(request.body.decode("utf-8"))
+                query = body.get("query", "")
+                if "IntrospectionQuery" in query:
+                    return super().dispatch(request, *args, **kwargs)
+            except Exception:
+                pass
+
+        # 🚫 Require token for everything else
+        auth_header = request.headers.get("Authorization")
         if not auth_header:
-            return JsonResponse(
-                {"message": "Authentication token not provided."}, status=401
-            )
+            return JsonResponse({"message": "Authentication token not provided."}, status=401)
 
         for authenticator in self.authentication_classes:
             try:
@@ -44,12 +58,9 @@ class DRFAuthenticatedGraphQLView(GraphQLView):
                 return JsonResponse({"message": str(e)}, status=401)
 
         if not request.user or not request.user.is_authenticated:
-            return JsonResponse(
-                {"message": "Invalid or expired token."}, status=401
-            )
+            return JsonResponse({"message": "Invalid or expired token."}, status=401)
 
         return super().dispatch(request, *args, **kwargs)
-
 
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):

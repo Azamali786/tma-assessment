@@ -5,15 +5,25 @@ from .models import Ingredient, Recipe
 from .serializers import IngredientSerializer, RecipeSerializer
 from graphql_jwt.decorators import login_required
 from graphene import relay
+from graphql_relay import from_global_id
 
 from django_filters import FilterSet
 from .models import Ingredient
+from graphql import GraphQLError
 
 class IngredientFilter(FilterSet):
     class Meta:
         model = Ingredient
         fields = {
             'name': ['exact', 'icontains', 'istartswith'],
+        }
+        
+class RecipeFilter(FilterSet):
+    class Meta:
+        model = Recipe
+        fields = {
+            'title': ['exact', 'icontains', 'istartswith'],
+            'ingredients__name': ['icontains'],  # Filter by ingredient name
         }
 
 class IngredientType(DjangoObjectType):
@@ -30,6 +40,7 @@ class RecipeType(DjangoObjectType):
         model = Recipe
         fields = '__all__'
         interfaces = (relay.Node,)
+        filterset_class = RecipeFilter  # ← Add this line
 
     def resolve_ingredient_count(self, info):
         return self.ingredients.count()
@@ -37,10 +48,14 @@ class RecipeType(DjangoObjectType):
 # Queries
 class Query(graphene.ObjectType):
     all_ingredients = DjangoFilterConnectionField(IngredientType)
+    all_recipes = DjangoFilterConnectionField(RecipeType)  # ← Add this line
     recipe = graphene.Field(RecipeType, id=graphene.ID(required=True))
 
     def resolve_all_ingredients(self, info, **kwargs):
         return Ingredient.objects.all()
+    
+    def resolve_all_recipes(self, info, **kwargs):
+        return Recipe.objects.all()
 
     def resolve_recipe(self, info, id):
         return Recipe.objects.get(pk=id)
@@ -67,7 +82,8 @@ class UpdateIngredient(graphene.Mutation):
     ingredient = graphene.Field(IngredientType)
 
     def mutate(self, info, id, name):
-        ingredient = Ingredient.objects.get(pk=id)
+        _, internal_id = from_global_id(id)     # gives up type and database id (pk)
+        ingredient = Ingredient.objects.get(pk=internal_id)
         serializer = IngredientSerializer(ingredient, data={'name': name})
         serializer.is_valid(raise_exception=True)
         ingredient = serializer.save()
@@ -80,8 +96,21 @@ class DeleteIngredient(graphene.Mutation):
     success = graphene.Boolean()
 
     def mutate(self, info, id):
-        Ingredient.objects.filter(pk=id).delete()
-        return DeleteIngredient(success=True)
+        try:
+            _type, internal_id = from_global_id(id)
+            if not internal_id:
+                raise GraphQLError("Invalid ID")
+            if _type != "IngredientType":
+                raise GraphQLError("Invalid node type for Ingredient.")
+            ingredient = Ingredient.objects.filter(pk=internal_id).first()
+            if not ingredient:
+                raise GraphQLError("Ingredient not found.")
+
+            ingredient.delete()
+            return DeleteIngredient(success=True)
+
+        except Exception as e:
+            raise GraphQLError(str(e))
 
 class CreateRecipe(graphene.Mutation):
     class Arguments:
@@ -91,8 +120,13 @@ class CreateRecipe(graphene.Mutation):
     recipe = graphene.Field(RecipeType)
 
     def mutate(self, info, title, ingredient_ids=[]):
-        recipe = Recipe.objects.create(title=title)
-        recipe.ingredients.set(ingredient_ids)
+        data = {
+            'title': title,
+            'ingredient_ids': ingredient_ids
+        }
+        serializer = RecipeSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        recipe = serializer.save()
         return CreateRecipe(recipe=recipe)
 
 class AddIngredientsToRecipe(graphene.Mutation):
