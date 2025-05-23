@@ -15,8 +15,6 @@ class IngredientFilter(FilterSet):
         fields = {
             'name': ['exact', 'icontains', 'istartswith'],
         }
-        # Alternatively, you can use 'exclude' instead of 'fields'
-        # exclude = ['created_at', 'updated_at']
 
 class IngredientType(DjangoObjectType):
     class Meta:
@@ -41,11 +39,9 @@ class Query(graphene.ObjectType):
     all_ingredients = DjangoFilterConnectionField(IngredientType)
     recipe = graphene.Field(RecipeType, id=graphene.ID(required=True))
 
-    # @login_required
     def resolve_all_ingredients(self, info, **kwargs):
         return Ingredient.objects.all()
 
-    # @login_required
     def resolve_recipe(self, info, id):
         return Recipe.objects.get(pk=id)
     
@@ -57,7 +53,6 @@ class CreateIngredient(graphene.Mutation):
 
     ingredient = graphene.Field(IngredientType)
 
-    # @login_required
     def mutate(self, info, name):
         serializer = IngredientSerializer(data={'name': name})
         serializer.is_valid(raise_exception=True)
@@ -71,7 +66,6 @@ class UpdateIngredient(graphene.Mutation):
 
     ingredient = graphene.Field(IngredientType)
 
-    # @login_required
     def mutate(self, info, id, name):
         ingredient = Ingredient.objects.get(pk=id)
         serializer = IngredientSerializer(ingredient, data={'name': name})
@@ -85,7 +79,6 @@ class DeleteIngredient(graphene.Mutation):
 
     success = graphene.Boolean()
 
-    # @login_required
     def mutate(self, info, id):
         Ingredient.objects.filter(pk=id).delete()
         return DeleteIngredient(success=True)
@@ -97,7 +90,6 @@ class CreateRecipe(graphene.Mutation):
 
     recipe = graphene.Field(RecipeType)
 
-    # @login_required
     def mutate(self, info, title, ingredient_ids=[]):
         recipe = Recipe.objects.create(title=title)
         recipe.ingredients.set(ingredient_ids)
@@ -110,7 +102,6 @@ class AddIngredientsToRecipe(graphene.Mutation):
 
     recipe = graphene.Field(RecipeType)
 
-    # @login_required
     def mutate(self, info, recipe_id, ingredient_ids):
         recipe = Recipe.objects.get(pk=recipe_id)
         recipe.ingredients.add(*ingredient_ids)
@@ -123,7 +114,6 @@ class RemoveIngredientsFromRecipe(graphene.Mutation):
 
     recipe = graphene.Field(RecipeType)
 
-    # @login_required
     def mutate(self, info, recipe_id, ingredient_ids):
         recipe = Recipe.objects.get(pk=recipe_id)
         recipe.ingredients.remove(*ingredient_ids)
