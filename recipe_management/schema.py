@@ -173,9 +173,53 @@ class AddIngredientsToRecipe(graphene.Mutation):
     recipe = graphene.Field(RecipeType)
 
     def mutate(self, info, recipe_id, ingredient_ids):
-        recipe = Recipe.objects.get(pk=recipe_id)
-        recipe.ingredients.add(*ingredient_ids)
-        return AddIngredientsToRecipe(recipe=recipe)
+        number_tracker = {
+            1: "First",
+            2: "Second",
+            3: "Third",
+            4: "Fourth",
+            5: "Fifth",
+            6: "Sixth"
+        }
+
+        try:
+            # Decode the recipe ID
+            _type, internal_recipe_id = from_global_id(recipe_id)
+            if not internal_recipe_id:
+                raise GraphQLError("Invalid Recipe ID.")
+            if _type != "RecipeType":
+                raise GraphQLError("Invalid node type for recipe.")
+            recipe = Recipe.objects.get(pk=internal_recipe_id)
+
+            # Decode and validate ingredient IDs
+            if not ingredient_ids:
+                raise GraphQLError("At least one ingredient ID must be provided.")
+
+            internal_ingredient_ids = []
+            id_number = 1
+                
+            for gid in ingredient_ids:
+                _type, internal_id = from_global_id(gid)
+                if not internal_id:
+                    raise GraphQLError(F"{number_tracker[id_number]} ID is Invalid.")
+                internal_ingredient_ids.append(int(internal_id))
+                id_number += 1
+                
+            data = {
+                'ingredients': internal_ingredient_ids
+            }
+
+            # Validate and save using the serializer
+            serializer = RecipeSerializer(instance=recipe, data=data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            recipe = serializer.save()
+            return AddIngredientsToRecipe(recipe=recipe)
+
+        except Recipe.DoesNotExist:
+            raise GraphQLError("Recipe not found.")
+        except Exception as e:
+            raise GraphQLError(str(e))
+        
 
 class RemoveIngredientsFromRecipe(graphene.Mutation):
     class Arguments:
