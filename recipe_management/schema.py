@@ -1,17 +1,17 @@
 import graphene
-from django_filters import FilterSet
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphql import GraphQLError
-from graphql_jwt.decorators import login_required
 from graphql_relay import from_global_id
 
 from .filters import IngredientFilter, RecipeFilter
 from .models import Ingredient, Recipe
 from .serializers import IngredientSerializer, RecipeSerializer
-from .utils import (decode_global_ids_with_labels,
-                    get_internal_id_from_global_id)
+from .utils import (
+    decode_global_ids_with_labels,
+    get_internal_id_from_global_id
+)
 
 
 class IngredientType(DjangoObjectType):
