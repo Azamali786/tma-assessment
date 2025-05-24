@@ -232,6 +232,10 @@ class DeleteIngredient(graphene.Mutation):
             # Decode and validate the global ID, expecting an IngredientType node
             ingredient, internal_id = get_internal_id_from_global_id(id, "IngredientType", "Ingredient ID")
             
+            # check if ingredient is related to any recipe then don't delet it.
+            if ingredient.recipes.exists():
+                raise GraphQLError("Cannot delete ingredient. It is associated with a recipe.")
+            
             # Delete the ingredient
             ingredient.delete()
             

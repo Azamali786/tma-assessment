@@ -51,6 +51,16 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = '__all__'
+        
+    def update(self, instance, validated_data):
+        """
+        Prevent updating if the ingredient is associated with any recipe.
+        """
+        if instance.recipes.exists():
+            raise serializers.ValidationError("This ingredient is associated with a recipe and cannot be updated.")
+        
+        # If not associated, allow update
+        return super().update(instance, validated_data)
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -77,6 +87,23 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = '__all__'
+        
+    # def validate(self, data):
+    #     ingredient_ids = data.get('ingredients', [])
+    #     recipe = self.instance  # Will be set for updates
+
+    #     if recipe:
+    #         # Existing recipe: check for duplicates
+    #         existing_ids = set(recipe.ingredients.values_list('id', flat=True))
+    #         duplicate_ids = existing_ids.intersection(set(ingredient_ids))
+
+    #         if duplicate_ids:
+    #             names = Ingredient.objects.filter(id__in=duplicate_ids).values_list('name', flat=True)
+    #             raise serializers.ValidationError({
+    #                 'ingredient_ids': f"The following ingredients are already added to this recipe: {', '.join(names)}"
+    #             })
+
+    #     return data
         
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients', [])
