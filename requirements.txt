@@ -3,7 +3,6 @@ asgiref==3.8.1
 Django==5.2.1
 django-filter==25.1
 django-graphql-auth==0.3.16
-django-graphql-jwt==0.4.0
 djangorestframework==3.16.0
 graphene==3.4.3
 graphene-django==3.2.3
