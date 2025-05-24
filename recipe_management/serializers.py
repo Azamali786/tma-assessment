@@ -1,6 +1,7 @@
 import re
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
 from .models import Ingredient, Recipe
 
@@ -40,7 +41,12 @@ class IngredientSerializer(serializers.ModelSerializer):
     allowing conversion between Ingredient instances and JSON representations.
     """
     
-    name = serializers.CharField(validators=[validate_string_field])
+    name = serializers.CharField(
+        validators=[
+            validate_string_field,
+            UniqueValidator(queryset=Ingredient.objects.all(), message="Ingredient with this name already exists.")
+        ]
+    )
     
     class Meta:
         model = Ingredient
@@ -56,7 +62,12 @@ class RecipeSerializer(serializers.ModelSerializer):
     using primary keys for ingredients.
     """
     
-    title = serializers.CharField(validators=[validate_string_field])
+    title = serializers.CharField(
+        validators=[
+            validate_string_field,
+            UniqueValidator(queryset=Recipe.objects.all(), message="Recipe with this name already exists.")
+        ]
+    )
     ingredients = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
         many=True,
