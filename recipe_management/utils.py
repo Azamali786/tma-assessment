@@ -1,5 +1,6 @@
 from graphql import GraphQLError
 from graphql_relay import from_global_id
+
 from .constants import NUMBER_TRACKER
 from .models import Ingredient, Recipe
 

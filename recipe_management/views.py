@@ -1,25 +1,21 @@
-from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework.authtoken.models import Token
-from rest_framework.response import Response
-
-
-from graphene_django.views import GraphQLView
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.mixins import LoginRequiredMixin
-
-from graphene_django.views import GraphQLView
+import json
 
 import rest_framework
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import authentication_classes, permission_classes, api_view
-from rest_framework.settings import api_settings
-from rest_framework.exceptions import AuthenticationFailed
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
-import json
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from graphene_django.views import GraphQLView
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.decorators import (api_view, authentication_classes,
+                                       permission_classes)
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.settings import api_settings
+from rest_framework.views import APIView
 
 
 @method_decorator(csrf_exempt, name='dispatch')
