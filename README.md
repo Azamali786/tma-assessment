@@ -73,6 +73,185 @@ Once you have the token:
 
 You can now test all available **queries**, **mutations**, and use **filters** and **cursor-based pagination**.
 
+## GraphQL Queries & Mutations Examples
+
+### Get list of ingredients
+```graphql
+query {
+  allIngredients {
+    edges {
+      cursor
+      node {
+        id
+        name
+      }
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+```
+
+### Get list of recipes with ingredients and ingredient count
+```graphql
+query {
+  allRecipes {
+    edges {
+      node {
+        id
+        title
+        ingredientCount
+        ingredients {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+```
+
+### Get details of a recipe using ID
+```graphql
+query {
+  recipe(id: "UmVjaXBlVHlwZTo0") {
+    id
+    title
+    ingredients {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
+    ingredientCount
+  }
+}
+```
+
+---
+
+### Create ingredient
+```graphql
+mutation {
+  createIngredient(name: "third ingredient") {
+    ingredient {
+      id
+      name
+    }
+  }
+}
+```
+
+### Update ingredient
+```graphql
+mutation {
+  updateIngredient(id: "SW5ncmVkaWVudFR5cGU6NA==", name: "latest ingredient updated one") {
+    ingredient {
+      id
+      name
+    }
+  }
+}
+```
+
+### Delete ingredient
+```graphql
+mutation {
+  deleteIngredient(id: "SW5ncmVkaWVudFR5cGU6Mw==") {
+    success
+  }
+}
+```
+
+---
+
+### Create recipe and connect ingredients
+```graphql
+mutation {
+  createRecipe(title: "Third Test Recipe", ingredientIds: ["SW5ncmVkaWVudFR5cGU6Mg==", "SW5ncmVkaWVudFR5cGU6Mw=="]) {
+    recipe {
+      id
+      title
+      ingredients {
+        edges {
+          node {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+### Add ingredients to recipe
+```graphql
+mutation {
+  addIngredientsToRecipe(recipeId: "UmVjaXBlVHlwZTo0", ingredientIds: ["SW5ncmVkaWVudFR5cGU6Mg==", "SW5ncmVkaWVudFR5cGU6Ng=="]) {
+    recipe {
+      id
+      ingredients {
+        edges {
+          node {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+### Remove ingredient from recipe
+```graphql
+mutation {
+  removeIngredientsFromRecipe(recipeId: "UmVjaXBlVHlwZTo0", ingredientIds: ["SW5ncmVkaWVudFR5cGU6Ng=="]) {
+    recipe {
+      id
+      ingredients {
+        edges {
+          node {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+**Note:**  
+- The IDs like `UmVjaXBlVHlwZTo0` or `SW5ncmVkaWVudFR5cGU6Mg==` are Relay-style global IDs and need to be used as-is.
+- Use the GraphiQL interface for easy exploration and testing.
+
+---
+
+Thank you for testing the APIs!
+
 ---
 
 ## 📘 Notes
