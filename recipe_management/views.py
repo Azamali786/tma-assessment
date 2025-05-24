@@ -1,6 +1,6 @@
 import json
 
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404, FileResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
@@ -9,8 +9,10 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.exceptions import AuthenticationFailed
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.views import APIView
+import os
 
 
 class CustomAuthToken(ObtainAuthToken):
@@ -118,3 +120,19 @@ class DRFAuthenticatedGraphQLView(GraphQLView):
 
         # If authenticated, proceed with the normal dispatch flow
         return super().dispatch(request, *args, **kwargs)
+    
+    
+class ReadmeFileAPIView(APIView):
+    """
+    Serves the README.md file as a downloadable markdown file.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        file_path = os.path.join(os.path.dirname(__file__), 'README.md')
+        if not os.path.exists(file_path):
+            raise Http404("README.md not found.")
+
+        response = FileResponse(open(file_path, 'rb'), content_type='text/markdown')
+        response['Content-Disposition'] = 'attachment; filename="README.md"'
+        return response
