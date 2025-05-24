@@ -11,6 +11,8 @@ from django_filters import FilterSet
 from .models import Ingredient
 from graphql import GraphQLError
 
+from .utils import get_internal_id_from_global_id, decode_global_ids_with_labels
+
 class IngredientFilter(FilterSet):
     class Meta:
         model = Ingredient
@@ -109,14 +111,7 @@ class DeleteIngredient(graphene.Mutation):
 
     def mutate(self, info, id):
         try:
-            _type, internal_id = from_global_id(id)
-            if not internal_id:
-                raise GraphQLError("Invalid ID.")
-            if _type != "IngredientType":
-                raise GraphQLError("Invalid node type for Ingredient.")
-            ingredient = Ingredient.objects.filter(pk=internal_id).first()
-            if not ingredient:
-                raise GraphQLError("Ingredient not found.")
+            ingredient, internal_id = get_internal_id_from_global_id(id, "IngredientType", "Ingredient ID")
 
             ingredient.delete()
             return DeleteIngredient(success=True)
@@ -132,25 +127,11 @@ class CreateRecipe(graphene.Mutation):
     recipe = graphene.Field(RecipeType)
 
     def mutate(self, info, title, ingredient_ids=[]):
-        number_tracker = {
-            1: "First",
-            2: "Second",
-            3: "Third",
-            4: "Fourth",
-            5: "Fifth",
-            6: "Sixth"
-        }
         try:
-            internal_ids = []
-            id_number = 1
             if not ingredient_ids:
                 raise GraphQLError("Atleat one ingredient is necessary to create recipe.")
-            for gid in ingredient_ids:
-                _type, internal_id = from_global_id(gid)
-                if not internal_id:
-                    raise GraphQLError(F"{number_tracker[id_number]} ID is Invalid.")
-                internal_ids.append(int(internal_id))
-                id_number += 1
+            
+            _, internal_ids = decode_global_ids_with_labels(ingredient_ids, "IngredientType", "Ingredient ID")
 
             data = {
                 'title': title,
@@ -173,50 +154,26 @@ class AddIngredientsToRecipe(graphene.Mutation):
     recipe = graphene.Field(RecipeType)
 
     def mutate(self, info, recipe_id, ingredient_ids):
-        number_tracker = {
-            1: "First",
-            2: "Second",
-            3: "Third",
-            4: "Fourth",
-            5: "Fifth",
-            6: "Sixth"
-        }
 
         try:
-            # Decode the recipe ID
-            _type, internal_recipe_id = from_global_id(recipe_id)
-            if not internal_recipe_id:
-                raise GraphQLError("Invalid Recipe ID.")
-            if _type != "RecipeType":
-                raise GraphQLError("Invalid node type for recipe.")
-            recipe = Recipe.objects.get(pk=internal_recipe_id)
-
-            # Decode and validate ingredient IDs
             if not ingredient_ids:
                 raise GraphQLError("At least one ingredient ID must be provided.")
-
-            internal_ingredient_ids = []
-            id_number = 1
-                
-            for gid in ingredient_ids:
-                _type, internal_id = from_global_id(gid)
-                if not internal_id:
-                    raise GraphQLError(F"{number_tracker[id_number]} ID is Invalid.")
-                internal_ingredient_ids.append(int(internal_id))
-                id_number += 1
+            
+            recipe, internal_id = get_internal_id_from_global_id(recipe_id, "RecipeType", "Recipe ID")
+            
+            # Decode and validate ingredient IDs
+            
+            _, internal_ingredient_ids = decode_global_ids_with_labels(ingredient_ids, "IngredientType", "Ingredient ID")
                 
             data = {
                 'ingredients': internal_ingredient_ids
             }
-
             # Validate and save using the serializer
             serializer = RecipeSerializer(instance=recipe, data=data, partial=True)
             serializer.is_valid(raise_exception=True)
             recipe = serializer.save()
             return AddIngredientsToRecipe(recipe=recipe)
 
-        except Recipe.DoesNotExist:
-            raise GraphQLError("Recipe not found.")
         except Exception as e:
             raise GraphQLError(str(e))
         
@@ -229,47 +186,21 @@ class RemoveIngredientsFromRecipe(graphene.Mutation):
     recipe = graphene.Field(RecipeType)
 
     def mutate(self, info, recipe_id, ingredient_ids):
-        
-        number_tracker = {
-            1: "First",
-            2: "Second",
-            3: "Third",
-            4: "Fourth",
-            5: "Fifth",
-            6: "Sixth"
-        }
 
         try:
-            # Decode the recipe ID
-            _type, internal_recipe_id = from_global_id(recipe_id)
-            if not internal_recipe_id:
-                raise GraphQLError("Invalid Recipe ID.")
-            if _type != "RecipeType":
-                raise GraphQLError("Invalid node type for recipe.")
-            recipe = Recipe.objects.get(pk=internal_recipe_id)
-            if not recipe:
-                raise GraphQLError("Recipe not found.")
-
             # Decode and validate ingredient IDs
             if not ingredient_ids:
                 raise GraphQLError("At least one ingredient ID must be provided.")
+            
+            recipe, internal_id = get_internal_id_from_global_id(recipe_id, "RecipeType", "Recipe ID")
+            
 
-            internal_ingredient_ids = []
-            id_number = 1
-                
-            for gid in ingredient_ids:
-                _type, internal_id = from_global_id(gid)
-                if not internal_id:
-                    raise GraphQLError(F"{number_tracker[id_number]} ID is Invalid.")
-                internal_ingredient_ids.append(int(internal_id))
-                id_number += 1
+            _, internal_ingredient_ids = decode_global_ids_with_labels(ingredient_ids, "IngredientType", "Ingredient ID")
                 
             # remove the given ingredients from existing recipe
             recipe.ingredients.remove(*internal_ingredient_ids)
             return RemoveIngredientsFromRecipe(recipe=recipe)
 
-        except Recipe.DoesNotExist:
-            raise GraphQLError("Recipe not found.")
         except Exception as e:
             raise GraphQLError(str(e))
         
